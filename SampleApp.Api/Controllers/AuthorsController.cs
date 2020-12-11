@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MediatR;
 
-using SampleApp.Core;
-using SampleApp.Core.Domain;
+using Microsoft.AspNetCore.Mvc;
 
-using System.Collections.Generic;
+using SampleApp.Persistence.MediatR.Commands;
+using SampleApp.Persistence.MediatR.Queries;
+
+using System.Threading;
+using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -13,52 +16,63 @@ namespace SampleApp.Api.Controllers
     [ApiController]
     public class AuthorsController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMediator _mediator;
 
-        public AuthorsController(IUnitOfWork unitOfWork)
+
+        public AuthorsController(IMediator mediator)
         {
-            _unitOfWork = unitOfWork;
+            _mediator = mediator;
         }
 
         // GET: api/<AuthorsController>
         [HttpGet]
-        public IEnumerable<Author> Get()
+        public async Task<IActionResult> Get([FromQuery] GetAllAuthorsQuery query, CancellationToken cancellationToken)
         {
-            return _unitOfWork.Authors.GetAll();
+            var result = await _mediator.Send(query, cancellationToken);
+
+            return Ok(result);
         }
 
         // GET api/<AuthorsController>/5
         [HttpGet("{id}")]
-        public Author Get(int id)
+        public async Task<IActionResult> Get(int id, CancellationToken cancellationToken)
         {
-            return _unitOfWork.Authors.GetAuthorWithCourses(id);
+            var query = new GetAuthorWithCoursesQuery(id);
+            var result = await _mediator.Send(query, cancellationToken);
+
+            return result != null
+                ? (IActionResult)Ok(result)
+                : NotFound();
         }
 
         // POST api/<AuthorsController>
         [HttpPost]
-        public void Post([FromBody] Author value)
+        public async Task<IActionResult> Post([FromBody] AddAuthorCommand command)
         {
-            _unitOfWork.Authors.Add(value);
-            _unitOfWork.SaveChanges();
+            var result = await _mediator.Send(command);
+
+            return CreatedAtAction("Get", new { id = result.Id }, result);
         }
 
         // PUT api/<AuthorsController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] Author value)
+        public async Task<IActionResult> Put(int id, [FromBody] UpdateAuthorCommand command)
         {
-            var author = _unitOfWork.Authors.Get(id);
-            author.Name = value.Name;
-            author.Courses = value.Courses;
-            _unitOfWork.SaveChanges();
+            var result = await _mediator.Send(command);
+            
+            return result == null
+                ?  (IActionResult) NotFound()
+                : CreatedAtAction("Get", new {id}, result);
         }
 
         // DELETE api/<AuthorsController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var author = _unitOfWork.Authors.Get(id);
-            _unitOfWork.Authors.Remove(author);
-            _unitOfWork.SaveChanges();
+            var command = new RemoveAuthorCommand {AuthorId = id};
+            _ = await _mediator.Send(command);
+
+            return NoContent();
         }
     }
 }

@@ -1,25 +1,25 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
+using SampleApp.Core;
 using SampleApp.Core.Domain;
 using SampleApp.Core.Repositories;
 
-using System.Linq;
+using System.Threading.Tasks;
 
 namespace SampleApp.Persistence.Repositories
 {
-    public class AuthorRepository : Repository<Author>, IAuthorRepository
+    public class AuthorRepository : Repository<Author, int>, IAuthorRepository
     {
-        public AuthorRepository(SampleAppContext context) : base(context)
+        public AuthorRepository(IUnitOfWork unitOfWork) : base(unitOfWork)
         {
         }
 
-        public SampleAppContext SampleAppContext => Context as SampleAppContext;
 
-        public Author GetAuthorWithCourses(int id)
+        public async Task<Author> GetAuthorWithCourses(int id)
         {
-            return SampleAppContext.Authors
-                .Include(a => a.Courses)
-                .SingleOrDefault(a => a.Id == id);
+            return await UnitOfWork.Query<Author>()
+                .Include(author => author.Courses)
+                .SingleOrDefaultAsync(author => author.Id.Equals(id));
         }
     }
 }

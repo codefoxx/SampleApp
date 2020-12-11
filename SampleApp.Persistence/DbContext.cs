@@ -4,12 +4,10 @@ using SampleApp.Core.Domain;
 
 namespace SampleApp.Persistence
 {
-    public class SampleAppContext : DbContext
+    public class ApplicationDbContext : DbContext
     {
-        public SampleAppContext(DbContextOptions<SampleAppContext> options)
-            : base(options)
-        {
-        }
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options) { }
 
         public virtual DbSet<Author> Authors { get; set; }
         public virtual DbSet<Course> Courses { get; set; }

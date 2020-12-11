@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MediatR;
 
-using SampleApp.Core;
-using SampleApp.Core.Domain;
+using Microsoft.AspNetCore.Mvc;
 
-using System.Collections.Generic;
+using SampleApp.Persistence.MediatR.Commands;
+using SampleApp.Persistence.MediatR.Queries;
+
+using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -13,53 +15,62 @@ namespace SampleApp.Api.Controllers
     [ApiController]
     public class CoursesController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMediator _mediator;
 
-        public CoursesController(IUnitOfWork unitOfWork)
+        public CoursesController(IMediator mediator)
         {
-            _unitOfWork = unitOfWork;
+            _mediator = mediator;
         }
 
 
         // GET: api/<CoursesController>
         [HttpGet]
-        public IEnumerable<Course> Get()
+        public async Task<IActionResult> Get()
         {
-            return _unitOfWork.Courses.GetCoursesWithAuthors();
+            var query = new GetCoursesWithAuthorsQuery();
+            var result = await _mediator.Send(query);
+
+            return Ok(result);
         }
 
         // GET api/<CoursesController>/5
         [HttpGet("{id}")]
-        public Course Get(int id)
+        public async Task<IActionResult> Get(int id)
         {
-            return _unitOfWork.Courses.Get(id);
+            var query = new GetCourseByIdQuery {CourseId = id};
+            var result = await _mediator.Send(query);
+
+            return result != null
+                ? Ok(result)
+                : (IActionResult) NotFound();
         }
 
         // POST api/<CoursesController>
         [HttpPost]
-        public void Post([FromBody] Course value)
+        public async Task<IActionResult> Post([FromBody] CreateCourseCommand command)
         {
-            _unitOfWork.Courses.Add(value);
-            _unitOfWork.SaveChanges();
+            var result = await _mediator.Send(command);
+
+            return CreatedAtAction("Get", new {id = result.Id}, result);
         }
 
         // PUT api/<CoursesController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] Course value)
+        public async Task<IActionResult> Put(int id, [FromBody] UpdateCourseCommand command)
         {
-            var course = _unitOfWork.Courses.Get(id);
-            course.Name = value.Name;
-            course.Author = value.Author;
-            _unitOfWork.SaveChanges();
+            var result = await _mediator.Send(command);
+
+            return CreatedAtAction("Get", new { id = result.Id }, result);
         }
 
         // DELETE api/<CoursesController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var course = _unitOfWork.Courses.Get(id);
-            _unitOfWork.Courses.Remove(course);
-            _unitOfWork.SaveChanges();
+            var command = new RemoveCourseCommand();
+            await _mediator.Send(command);
+
+            return NoContent();
         }
     }
 }

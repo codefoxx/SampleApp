@@ -1,74 +1,83 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
+using SampleApp.Core;
+using SampleApp.Core.Domain;
 using SampleApp.Core.Repositories;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SampleApp.Persistence.Repositories
 {
-    public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
+    public class Repository<TEntity, TKey> : IRepository<TEntity, TKey> where TEntity: class, IEntity<TKey>
     {
-        protected readonly DbContext Context;
-
-        public Repository(DbContext context)
+        protected readonly IUnitOfWork UnitOfWork;
+        
+        public Repository(IUnitOfWork unitOfWork)
         {
-            Context = context;
+            UnitOfWork = unitOfWork;
         }
 
-        public TEntity Get(int id)
+        public async Task<TEntity> GetAsync(TKey id, CancellationToken cancellationToken = default)
         {
-            // Here we are working with a DbContext, not PlutoContext. So we don't have DbSets 
-            // such as Courses or Authors, and we need to use the generic Set() method to access them.
-            return Context.Set<TEntity>().Find(id);
+            return await UnitOfWork.Query<TEntity>()
+                .SingleOrDefaultAsync( entity => entity.Id.Equals(id), cancellationToken);
+        }
+        
+        public async Task<IReadOnlyCollection<TEntity>> GetAllAsync(int pageIndex = 0, int pageSize = 10, CancellationToken cancellationToken = default)
+        {
+            return await UnitOfWork.Query<TEntity>()
+                .Skip(pageIndex)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
         }
 
-        public IEnumerable<TEntity> GetAll()
+        public async Task<IReadOnlyCollection<TEntity>> FindAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
-            // Note that here I've repeated Context.Set<TEntity>() in every method and this is causing
-            // too much noise. I could get a reference to the DbSet returned from this method in the 
-            // constructor and store it in a private field like _entities. This way, the implementation
-            // of our methods would be cleaner:
-            // 
-            // _entities.ToList();
-            // _entities.Where();
-            // _entities.SingleOrDefault();
-            // 
-            // I didn't change it because I wanted the code to look like the videos. But feel free to change
-            // this on your own.
-            return Context.Set<TEntity>().ToList();
+            return await UnitOfWork.Query<TEntity>()
+                .Where(predicate)
+                .ToListAsync(cancellationToken);
         }
 
-        public IEnumerable<TEntity> Find(Expression<Func<TEntity, bool>> predicate)
+        public async Task<TEntity> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
-            return Context.Set<TEntity>().Where(predicate);
-        }
-
-        public TEntity SingleOrDefault(Expression<Func<TEntity, bool>> predicate)
-        {
-            return Context.Set<TEntity>().SingleOrDefault(predicate);
+            return await UnitOfWork.Query<TEntity>()
+                .SingleOrDefaultAsync(predicate, cancellationToken);
         }
 
         public void Add(TEntity entity)
         {
-            Context.Set<TEntity>().Add(entity);
+            UnitOfWork.Add(entity);
         }
 
         public void AddRange(IEnumerable<TEntity> entities)
         {
-            Context.Set<TEntity>().AddRange(entities);
+            foreach (TEntity entity in entities)
+            {
+                UnitOfWork.Add(entity);
+            }
+        }
+
+        public void Update(TEntity entity)
+        {
+            UnitOfWork.Update(entity);
         }
 
         public void Remove(TEntity entity)
         {
-            Context.Set<TEntity>().Remove(entity);
+            UnitOfWork.Delete(entity);
         }
 
         public void RemoveRange(IEnumerable<TEntity> entities)
         {
-            Context.Set<TEntity>().RemoveRange(entities);
+            foreach (TEntity entity in entities)
+            {
+                UnitOfWork.Delete(entity);
+            }
         }
     }
 }

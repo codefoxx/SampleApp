@@ -1,37 +1,37 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
+using SampleApp.Core;
 using SampleApp.Core.Domain;
 using SampleApp.Core.Repositories;
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SampleApp.Persistence.Repositories
 {
-    public class CourseRepository : Repository<Course>, ICourseRepository
+    public class CourseRepository : Repository<Course, int>, ICourseRepository
     {
-        public CourseRepository(DbContext context) : base(context)
-        {
-        }
+        public CourseRepository(IUnitOfWork unitOfWork) 
+            : base(unitOfWork) { }
 
-        public SampleAppContext SampleAppContext => Context as SampleAppContext;
-
-        public IEnumerable<Course> GetTopSellingCourses(int count)
+        public async Task<IList<Course>> GetTopSellingCoursesAsync(int count, CancellationToken cancellationToken = default)
         {
-            return SampleAppContext.Courses
-                .OrderByDescending(c => c.FullPrice)
+            return await UnitOfWork.Query<Course>()
+                .OrderByDescending(course => course.FullPrice)
                 .Take(count)
-                .ToList();
+                .ToListAsync(cancellationToken);
         }
 
-        public IEnumerable<Course> GetCoursesWithAuthors(int pageIndex, int pageSize)
+        public async Task<IList<Course>> GetCoursesWithAuthorsAsync(int pageIndex = 0, int pageSize = 10, CancellationToken cancellationToken = default)
         {
-            return SampleAppContext.Courses
-                .Include(c => c.Author)
-                .OrderBy(c => c.Name)
+            return await UnitOfWork.Query<Course>()
+                .Include(course => course.Author)
+                .OrderBy(course => course.Name)
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
-                .ToList();
+                .ToListAsync(cancellationToken);
         }
     }
 }

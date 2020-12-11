@@ -16,6 +16,10 @@ namespace SampleApp.Persistence.EntityConfigurations
             builder.Property(course => course.Name)
                 .IsRequired()
                 .HasMaxLength(255);
+
+            builder
+                .HasOne(course => course.Cover)
+                .WithOne(cover => cover.Course);
         }
     }
 }

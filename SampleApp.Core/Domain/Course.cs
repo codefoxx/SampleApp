@@ -1,11 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace SampleApp.Core.Domain
 {
-    public class Course
+    public class Course : BaseEntity<int>
     {
-        public int Id { get; set; }
-
         public string Name { get; set; }
 
         public string Description { get; set; }
@@ -18,9 +17,9 @@ namespace SampleApp.Core.Domain
 
         public int AuthorId { get; set; }
 
-        public virtual ICollection<Tag> Tags { get; set; } = new HashSet<Tag>();
+        public ICollection<Tag> Tags { get; set; } = new HashSet<Tag>();
 
-        //public Cover Cover { get; set; }
+        public Cover Cover { get; set; }
 
         public bool IsBeginnerCourse => Level == 1;
     }

@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using SampleApp.Persistence;
+using SampleApp.Persistence.MediatR;
 
 namespace SampleApp.Api
 {
@@ -27,8 +28,12 @@ namespace SampleApp.Api
 
             services.AddSampleAppContext(config =>
             {
-                config.ConnectionString = Configuration.GetConnectionString("DefaultConnection");
+                config.SqlConnectionString = Configuration.GetConnectionString("DefaultConnection");
+                config.RedisConnectionString = Configuration.GetConnectionString("RedisConnection");
             });
+
+            services.AddSampleAppMapper();
+            services.AddMediatRContext();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

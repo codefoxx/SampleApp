@@ -1,9 +1,10 @@
 ﻿using SampleApp.Core.Domain;
+using System.Threading.Tasks;
 
 namespace SampleApp.Core.Repositories
 {
-    public interface IAuthorRepository : IRepository<Author>
+    public interface IAuthorRepository : IRepository<Author, int>
     {
-        Author GetAuthorWithCourses(int id);
+        Task<Author> GetAuthorWithCourses(int id);
     }
 }

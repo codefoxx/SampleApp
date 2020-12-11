@@ -8,7 +8,7 @@ using SampleApp.Persistence;
 
 namespace SampleApp.Persistence.Migrations
 {
-    [DbContext(typeof(SampleAppContext))]
+    [DbContext(typeof(DbContext))]
     [Migration("20201205143037_InitialCreate")]
     partial class InitialCreate
     {

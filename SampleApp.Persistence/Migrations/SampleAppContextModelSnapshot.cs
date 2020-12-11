@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace SampleApp.Persistence.Migrations
 {
-    [DbContext(typeof(SampleAppContext))]
+    [DbContext(typeof(DbContext))]
     internal class SampleAppContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

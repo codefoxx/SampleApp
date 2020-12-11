@@ -1,22 +1,31 @@
-﻿using System;
+﻿using SampleApp.Core.Domain;
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SampleApp.Core.Repositories
 {
-    public interface IRepository<TEntity> where TEntity : class
+    public interface IRepository<TEntity, in TKey> where TEntity : IEntity<TKey>
     {
-        TEntity Get(int id);
-        IEnumerable<TEntity> GetAll();
-        IEnumerable<TEntity> Find(Expression<Func<TEntity, bool>> predicate);
+        Task<TEntity> GetAsync(TKey id, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyCollection<TEntity>> GetAllAsync(int pageIndex = default, int pageSize = 10, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyCollection<TEntity>> FindAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
 
         // This method was not in the videos, but I thought it would be useful to add.
-        TEntity SingleOrDefault(Expression<Func<TEntity, bool>> predicate);
+        Task<TEntity> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
 
         void Add(TEntity entity);
+        
         void AddRange(IEnumerable<TEntity> entities);
 
+        void Update(TEntity entity);
+
         void Remove(TEntity entity);
+        
         void RemoveRange(IEnumerable<TEntity> entities);
     }
 }

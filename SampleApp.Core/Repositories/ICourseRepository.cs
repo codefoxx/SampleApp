@@ -1,12 +1,15 @@
 ﻿using SampleApp.Core.Domain;
 
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SampleApp.Core.Repositories
 {
-    public interface ICourseRepository : IRepository<Course>
+    public interface ICourseRepository : IRepository<Course, int>
     {
-        IEnumerable<Course> GetTopSellingCourses(int count);
-        IEnumerable<Course> GetCoursesWithAuthors(int pageIndex = 0, int pageSize = 10);
+        Task<IList<Course>> GetTopSellingCoursesAsync(int count, CancellationToken cancellationToken = default);
+
+        Task<IList<Course>> GetCoursesWithAuthorsAsync(int pageIndex = 0, int pageSize = 10, CancellationToken cancellationToken = default);
     }
 }
